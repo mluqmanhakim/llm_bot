@@ -7,6 +7,6 @@
 ```streamlit run st.py```
 
 
-# Screenshot of the bot
+# Video of the bot
 
-![alt text](http://url/to/img.png)
+[streamlit-st-2024-11-03-21-11-88.webm](https://github.com/user-attachments/assets/e7dfde09-0ca0-47cd-9186-e9cc06fb97bb)
