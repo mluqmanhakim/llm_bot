@@ -54,8 +54,8 @@ def prepare_prompt(query, retriever):
 if __name__ == "__main__":
     st.title("Review Bot")
     context_path = "bot_index"
-    embed_model, llm = initialize_models(context_path)
-    index, retriever = load_index()
+    embed_model, llm = initialize_models()
+    index, retriever = load_index(context_path)
 
     if "chat_engine" not in st.session_state.keys():
         st.session_state.llm = llm
