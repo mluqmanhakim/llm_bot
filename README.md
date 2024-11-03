@@ -7,6 +7,6 @@
 ```streamlit run st.py```
 
 
-# Screenshot of the bot
+# Video of the bot
 
-![alt text](http://url/to/img.png)
+Visit this URL: https://youtu.be/fcz_RPfTEHo
