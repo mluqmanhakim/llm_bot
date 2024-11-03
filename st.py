@@ -1,9 +1,14 @@
 import streamlit as st
 
-from llama_index.core import StorageContext, load_index_from_storage
+from llama_index.core import (
+    StorageContext,
+    load_index_from_storage,
+    Settings,
+    PromptTemplate,
+)
 from llama_index.llms.ollama import Ollama
-from llama_index.core import Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.core.retrievers import VectorIndexRetriever
 
 
 @st.cache_resource
@@ -13,25 +18,48 @@ def initialize_models():
     Settings.llm = llm
     Settings.embed_model = embed_model
     return embed_model, llm
-    
+
+
 @st.cache_resource()
-def load_index():
+def load_index(context_path):
     with st.spinner(text="Loading the index"):
-        storage_context = StorageContext.from_defaults(persist_dir="bot_index")
+        storage_context = StorageContext.from_defaults(persist_dir=context_path)
         index = load_index_from_storage(storage_context)
-        return index
+        retriever = VectorIndexRetriever(
+            index=index,
+            similarity_top_k=3,
+        )
+        return index, retriever
 
 
-if __name__ == '__main__':
+def prepare_prompt(query, retriever):
+    query_context = retriever.retrieve(query)
+
+    context_str = ""
+    for i in range(len(query_context)):
+        context_str += query_context[0].get_content() + ". \n"
+
+    template = (
+        "We have provided context information below. \n"
+        "---------------------\n"
+        "{context_str}"
+        "\n---------------------\n"
+        "Given this information, please answer the question: {query_str}\n"
+    )
+    qa_template = PromptTemplate(template)
+    prompt = qa_template.format(context_str=context_str, query_str=query)
+    return prompt
+
+
+if __name__ == "__main__":
     st.title("Review Bot")
-    embed_model, llm = initialize_models()
-    index = load_index()
+    context_path = "bot_index"
+    embed_model, llm = initialize_models(context_path)
+    index, retriever = load_index()
 
     if "chat_engine" not in st.session_state.keys():
-        # st.session_state.chat_engine = index.as_chat_engine(chat_mode="condense_question", verbose=True)
-        st.session_state.query_engine = index.as_query_engine()
+        st.session_state.llm = llm
 
-    # Initialize chat history
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -44,10 +72,10 @@ if __name__ == '__main__':
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # response = st.session_state.chat_engine.chat(prompt)
-        response = st.session_state.query_engine.query(prompt)
-        
+        prompt_mod = prepare_prompt(prompt, retriever)
+        response = st.session_state.llm.complete(prompt_mod)
+
         with st.chat_message("assistant"):
-            response = st.write(response.response)
+            response = st.write(response.text)
 
         st.session_state.messages.append({"role": "assistant", "content": response})
