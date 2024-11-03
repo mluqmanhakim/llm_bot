@@ -57,7 +57,7 @@ if __name__ == "__main__":
     embed_model, llm = initialize_models()
     index, retriever = load_index(context_path)
 
-    if "chat_engine" not in st.session_state.keys():
+    if "llm" not in st.session_state.keys():
         st.session_state.llm = llm
 
     if "messages" not in st.session_state:
@@ -67,8 +67,10 @@ if __name__ == "__main__":
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input("What is up?"):
+    prompt = st.chat_input("What is up?")
+    if prompt:
         st.session_state.messages.append({"role": "user", "content": prompt})
+        
         with st.chat_message("user"):
             st.markdown(prompt)
 
@@ -76,6 +78,6 @@ if __name__ == "__main__":
         response = st.session_state.llm.complete(prompt_mod)
 
         with st.chat_message("assistant"):
-            response = st.write(response.text)
+            st.markdown(response.text)
 
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.session_state.messages.append({"role": "assistant", "content": response.text})
